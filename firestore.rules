@@ -14,7 +14,7 @@ service cloud.firestore {
                     && request.resource.data.items is list
                     && request.resource.data.items.size() > 0;
       allow read, update: if owner();
-      allow delete: if false;
+      allow delete: if owner();
     }
   }
 }
