@@ -1,20 +1,449 @@
-import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";import{getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";import{getFirestore,collection,onSnapshot,doc,updateDoc,setDoc,deleteDoc,writeBatch,serverTimestamp,query,orderBy}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";import{firebaseConfig}from"./firebase-config.js";import{starterMenu}from"./menu-data.js";
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),$=s=>document.querySelector(s);let orders=[],menu=[],tab="orders",checkout=null,payment="Cash",ordersLoaded=false,audioContext=null,alertsEnabled=false,reportRange="daily",shownReports=[];
-const dt=v=>v?.toDate?new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",dateStyle:"medium",timeStyle:"medium"}).format(v.toDate()):"Just now";setInterval(()=>$("#liveClock").textContent=new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",dateStyle:"full",timeStyle:"medium"}).format(new Date())+" · LIVE",1000);
-let installPrompt=null;if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(console.warn));window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;$("#installApp").classList.add("install-ready")});window.addEventListener("appinstalled",()=>{$("#installApp").textContent="✓ App Installed";$("#installApp").disabled=true;installPrompt=null});$("#installApp").onclick=async()=>{if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;return}alert(/iphone|ipad|ipod/i.test(navigator.userAgent)?"Safari ka Share button dabayein, phir Add to Home Screen select karein.":"Chrome menu (⋮) kholkar Install app ya Add to Home screen select karein. Agar option na dikhe to page refresh karke kuch seconds wait karein.")};
-$("#loginBtn").onclick=async()=>{try{await signInWithEmailAndPassword(auth,$("#ownerEmail").value,$("#ownerPassword").value)}catch{$("#loginError").textContent="Email ya password galat hai"}};$("#logoutBtn").onclick=()=>signOut(auth);onAuthStateChanged(auth,u=>{$("#loginView").classList.toggle("hidden",!!u);$("#dashboard").classList.toggle("hidden",!u);if(u)startLive()});
-let unsubOrders,unsubMenu;function startLive(){unsubOrders?.();unsubMenu?.();ordersLoaded=false;unsubOrders=onSnapshot(query(collection(db,"orders"),orderBy("createdAt","desc")),s=>{const fresh=s.docChanges().filter(c=>c.type==="added"&&c.doc.data().status==="New");orders=s.docs.map(d=>({id:d.id,...d.data()}));render();if(ordersLoaded&&fresh.length)fresh.forEach(c=>notifyNewOrder({id:c.doc.id,...c.doc.data()}));ordersLoaded=true});unsubMenu=onSnapshot(collection(db,"menu"),async s=>{if(s.empty){for(const i of starterMenu)await setDoc(doc(db,"menu",i.id),i);return}menu=s.docs.map(d=>({id:d.id,...d.data()}));render()})}
-$("#enableAlerts").onclick=async()=>{try{if("Notification"in window&&Notification.permission==="default")await Notification.requestPermission();audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();await audioContext.resume();alertsEnabled=true;$("#enableAlerts").textContent="🔔 Alerts ON";playOrderChime()}catch{$("#enableAlerts").textContent="Alerts blocked"}};
-function playOrderChime(){if(!alertsEnabled||!audioContext)return;[880,1175,880].forEach((freq,i)=>{const o=audioContext.createOscillator(),g=audioContext.createGain(),start=audioContext.currentTime+i*.22;o.frequency.value=freq;o.type="sine";g.gain.setValueAtTime(.001,start);g.gain.exponentialRampToValueAtTime(.28,start+.02);g.gain.exponentialRampToValueAtTime(.001,start+.18);o.connect(g);g.connect(audioContext.destination);o.start(start);o.stop(start+.2)})}
-function notifyNewOrder(o){playOrderChime();document.title=`🔔 Table ${o.table} - New Order`;setTimeout(()=>document.title="The Huts Owner Panel",8000);if("Notification"in window&&Notification.permission==="granted")new Notification("The Huts Cafe - New Order",{body:`Table ${String(o.table).padStart(2,"0")} · ${o.items.reduce((s,i)=>s+i.qty,0)} item(s) · ₹${o.total}`,tag:`order-${o.id}`,renotify:true})}
-document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("active",x===b));$("#pageTitle").textContent=b.textContent.trim().replace(/^[^ ]+ /,"");render()});
-function render(){if(tab==="orders")renderOrders();if(tab==="tables")renderTables();if(tab==="menu")renderMenu();if(tab==="qrcodes")renderQRCodes();if(tab==="reports")renderReports()}
-function renderOrders(){const active=orders.filter(o=>!["Completed","Cancelled"].includes(o.status));$("#panel").innerHTML=`<div class="stats"><article>Active<strong>${active.length}</strong></article><article>Occupied<strong>${new Set(active.map(o=>o.table)).size}/25</strong></article><article>Sales<strong>₹${orders.filter(o=>o.status==="Completed").reduce((s,o)=>s+o.total-(o.discount||0),0)}</strong></article></div><div class="order-grid">${active.map(o=>`<article class="order-card"><header><b>TABLE ${String(o.table).padStart(2,"0")}</b><em>${o.status}</em></header><small>${dt(o.createdAt)}</small>${o.items.map(i=>`<div><span>${i.qty}× ${i.name}</span><b>₹${i.qty*i.price}</b></div>`).join("")}${o.note?`<p>Note: ${o.note}</p>`:""}<footer><strong>₹${o.total}</strong>${o.status==="New"?`<button data-status="Preparing" data-id="${o.id}">Accept</button>`:o.status==="Preparing"?`<button data-status="Ready" data-id="${o.id}">Ready</button>`:`<button data-checkout="${o.id}">Checkout</button>`}<button data-kot="${o.id}">KOT</button></footer></article>`).join("")||"<p>No active orders</p>"}</div>`}
-function renderTables(){const active=orders.filter(o=>!["Completed","Cancelled"].includes(o.status));$("#panel").innerHTML=`<div class="tables">${Array.from({length:25},(_,i)=>i+1).map(n=>{const list=active.filter(o=>o.table===n);return`<article class="${list.length?"busy":""}"><small>TABLE</small><strong>${String(n).padStart(2,"0")}</strong><span>${list.length?`₹${list.reduce((s,o)=>s+o.total,0)}`:"Available"}</span></article>`}).join("")}</div>`}
-function renderMenu(){$("#panel").innerHTML=`<div class="menu-editor">${menu.map(i=>`<article><div><small>${i.category}</small><b>${i.name}</b></div><input data-price="${i.id}" type="number" value="${i.price}"><label><input data-avail="${i.id}" type="checkbox" ${i.available!==false?"checked":""}> Available</label><button data-save="${i.id}">Save</button></article>`).join("")}</div>`}
-function renderQRCodes(){const base=`${location.origin}${location.pathname.replace(/owner\.html$/,'')}`;$("#panel").innerHTML=`<section class="qr-section"><div class="qr-toolbar"><div><h2>25 Table QR Codes</h2><p>Har QR apne table ka unique menu kholta hai.</p></div><button data-print-qr>Print / Save PDF</button></div><div class="qr-grid">${Array.from({length:25},(_,i)=>i+1).map(n=>`<article class="qr-card"><span>THE HUTS CAFE</span><div class="qr-canvas" data-qr="${n}"></div><strong>TABLE ${String(n).padStart(2,"0")}</strong><small>Scan · Order · Enjoy</small><button data-download-qr="${n}">Download QR</button></article>`).join("")}</div></section>`;if(!window.QRCode){$(".qr-grid").innerHTML="<p>QR library load nahi hui. Internet check karke page refresh karein.</p>";return}document.querySelectorAll("[data-qr]").forEach(el=>new QRCode(el,{text:`${base}?table=${el.dataset.qr}`,width:180,height:180,colorDark:"#123328",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H}))}
-const orderDate=o=>o.completedAt?.toDate?.()||o.createdAt?.toDate?.()||new Date(0);function inReportRange(o){const d=orderDate(o),now=new Date(),start=new Date(now);if(reportRange==="daily")start.setHours(0,0,0,0);if(reportRange==="weekly"){start.setHours(0,0,0,0);start.setDate(start.getDate()-6)}if(reportRange==="monthly")start.setFullYear(now.getFullYear(),now.getMonth(),1),start.setHours(0,0,0,0);return d>=start&&d<=now}function renderReports(){shownReports=orders.filter(o=>o.status==="Completed"&&inReportRange(o));const total=shownReports.reduce((s,o)=>s+o.total-(o.discount||0),0),cash=shownReports.filter(o=>o.paymentMode==="Cash").reduce((s,o)=>s+o.total-(o.discount||0),0),upi=shownReports.filter(o=>o.paymentMode==="UPI").reduce((s,o)=>s+o.total-(o.discount||0),0);const days=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate(),daily=Array.from({length:days},()=>0);shownReports.forEach(o=>{const d=orderDate(o);if(d.getMonth()===new Date().getMonth()&&d.getFullYear()===new Date().getFullYear())daily[d.getDate()-1]+=o.total-(o.discount||0)});const max=Math.max(1,...daily);$("#panel").innerHTML=`<div class="report-toolbar"><div class="report-tabs"><button data-report-range="daily" class="${reportRange==="daily"?"active":""}">Daily</button><button data-report-range="weekly" class="${reportRange==="weekly"?"active":""}">Weekly</button><button data-report-range="monthly" class="${reportRange==="monthly"?"active":""}">Monthly</button></div>${shownReports.length?`<button class="danger" data-delete-shown>Delete shown reports</button>`:""}</div><div class="stats"><article>Sales<strong>₹${total}</strong></article><article>Cash<strong>₹${cash}</strong></article><article>UPI<strong>₹${upi}</strong></article></div>${reportRange==="monthly"?`<section class="sales-chart"><h3>Monthly Sales Graph</h3><div class="chart-bars">${daily.map((v,i)=>`<div class="chart-day" title="${i+1}: ₹${v}"><span style="height:${Math.max(v?5:0,v/max*100)}%"></span><small>${i%5===0||i===daily.length-1?i+1:""}</small></div>`).join("")}</div></section>`:""}<div class="report-list">${shownReports.map(o=>`<div class="history-row report-row"><span><b>${o.memoNumber||`HUTS-${o.id.slice(-6).toUpperCase()}`}</b><small>Table ${o.table} · ${dt(o.completedAt||o.createdAt)}</small></span><b>₹${o.total-(o.discount||0)}</b><div><button data-bill="${o.id}">Bill</button><button class="danger" data-delete-report="${o.id}">Delete</button></div></div>`).join("")||"<p>No completed bills in this period.</p>"}</div>`}
-document.addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.reportRange){reportRange=b.dataset.reportRange;renderReports();return}if(b.dataset.deleteReport&&confirm("Ye bill/report permanently delete ho jayega. Delete karein?"))await deleteDoc(doc(db,"orders",b.dataset.deleteReport));if(b.hasAttribute("data-delete-shown")&&shownReports.length&&confirm(`${shownReports.length} report(s) permanently delete ho jayengi. Continue?`)){const batch=writeBatch(db);shownReports.forEach(o=>batch.delete(doc(db,"orders",o.id)));await batch.commit()}if(b.dataset.status)await updateDoc(doc(db,"orders",b.dataset.id),{status:b.dataset.status});if(b.dataset.save){const id=b.dataset.save;await updateDoc(doc(db,"menu",id),{price:Number(document.querySelector(`[data-price='${id}']`).value),available:document.querySelector(`[data-avail='${id}']`).checked})}if(b.dataset.checkout){checkout=orders.find(o=>o.id===b.dataset.checkout);$("#checkoutTitle").textContent=`Table ${String(checkout.table).padStart(2,"0")}`;$("#discount").value=0;updatePayable();$("#checkoutModal").classList.remove("hidden")}if(b.dataset.kot)print(orders.find(o=>o.id===b.dataset.kot),"kot");if(b.dataset.bill)print(orders.find(o=>o.id===b.dataset.bill),"bill");if(b.hasAttribute("data-print-qr")){document.body.classList.add("printing-qr");window.print();setTimeout(()=>document.body.classList.remove("printing-qr"),500)}if(b.dataset.downloadQr){const n=b.dataset.downloadQr,box=document.querySelector(`[data-qr='${n}']`),canvas=box?.querySelector("canvas"),img=box?.querySelector("img"),a=document.createElement("a");a.download=`the-huts-table-${String(n).padStart(2,"0")}-qr.png`;a.href=canvas?canvas.toDataURL("image/png"):img?.src||"";if(a.href)a.click()}});
-document.querySelectorAll("[data-pay]").forEach(b=>b.onclick=()=>{payment=b.dataset.pay;document.querySelectorAll("[data-pay]").forEach(x=>x.classList.toggle("active",x===b))});$("#discount").oninput=updatePayable;function updatePayable(){if(checkout)$("#payable").textContent=`₹${Math.max(0,checkout.total-Number($("#discount").value||0))}`}$('[data-checkout-close]').onclick=()=>$("#checkoutModal").classList.add("hidden");
-$("#completePayment").onclick=async()=>{const discount=Math.min(checkout.total,Math.max(0,Number($("#discount").value||0))),now=new Date(),memoNumber=`HUTS-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}${String(now.getSeconds()).padStart(2,"0")}-${checkout.id.slice(-3).toUpperCase()}`;await updateDoc(doc(db,"orders",checkout.id),{status:"Completed",discount,paymentMode:payment,memoNumber,completedAt:serverTimestamp()});checkout={...checkout,status:"Completed",discount,paymentMode:payment,memoNumber};$("#checkoutModal").classList.add("hidden");print(checkout,"bill")};
-function print(o,mode){const memo=o.memoNumber||`HUTS-${o.id.slice(-6).toUpperCase()}`;$("#receipt").innerHTML=`<h1>THE HUTS CAFE</h1><p>${mode==="kot"?"KITCHEN ORDER TICKET":"BILL MEMO"}</p>${mode==="bill"?"<p>Near Murliwala Garden, Agra Road, Jaipur</p>":""}<hr><div><span>${mode==="kot"?`KOT: ${o.id.slice(-6).toUpperCase()}`:`Memo No: ${memo}`}</span><b>Table ${o.table}</b></div><p>${dt(o.completedAt||o.createdAt)}</p><hr>${o.items.map(i=>`<div><span>${i.qty} x ${i.name}</span>${mode==="bill"?`<b>₹${i.qty*i.price}</b>`:""}</div>`).join("")}${o.note?`<p><b>NOTE: ${o.note}</b></p>`:""}${mode==="bill"?`<hr><div><span>Subtotal</span><b>₹${o.total}</b></div><div><span>Discount</span><b>-₹${o.discount||0}</b></div><div><span>${o.paymentMode||""}</span><b>TOTAL ₹${o.total-(o.discount||0)}</b></div><p>Thank you! Visit again.</p>`:""}`;window.print()}
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  deleteDoc,
+  writeBatch,
+  serverTimestamp,
+  query,
+  orderBy,
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+import { starterMenu } from "./menu-data.js";
+const app = initializeApp(firebaseConfig),
+  auth = getAuth(app),
+  db = getFirestore(app),
+  $ = (s) => document.querySelector(s);
+let orders = [],
+  menu = [],
+  tab = "orders",
+  checkout = null,
+  payment = "Cash",
+  ordersLoaded = false,
+  audioContext = null,
+  alertsEnabled = false,
+  reportRange = "daily",
+  shownReports = [];
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+const dt = (v) =>
+  v?.toDate
+    ? new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "medium",
+        timeStyle: "medium",
+      }).format(v.toDate())
+    : "Just now";
+setInterval(
+  () =>
+    ($("#liveClock").textContent =
+      new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "full",
+        timeStyle: "medium",
+      }).format(new Date()) + " · LIVE"),
+  1000,
+);
+let installPrompt = null;
+if ("serviceWorker" in navigator)
+  window.addEventListener("load", () =>
+    navigator.serviceWorker.register("sw.js").catch(console.warn),
+  );
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  $("#installApp").classList.add("install-ready");
+});
+window.addEventListener("appinstalled", () => {
+  $("#installApp").textContent = "✓ App Installed";
+  $("#installApp").disabled = true;
+  installPrompt = null;
+});
+$("#installApp").onclick = async () => {
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    return;
+  }
+  alert(
+    /iphone|ipad|ipod/i.test(navigator.userAgent)
+      ? "Safari ka Share button dabayein, phir Add to Home Screen select karein."
+      : "Chrome menu (⋮) kholkar Install app ya Add to Home screen select karein. Agar option na dikhe to page refresh karke kuch seconds wait karein.",
+  );
+};
+$("#loginBtn").onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      $("#ownerEmail").value,
+      $("#ownerPassword").value,
+    );
+  } catch {
+    $("#loginError").textContent = "Email ya password galat hai";
+  }
+};
+$("#logoutBtn").onclick = () => signOut(auth);
+onAuthStateChanged(auth, (u) => {
+  $("#loginView").classList.toggle("hidden", !!u);
+  $("#dashboard").classList.toggle("hidden", !u);
+  if (u) startLive();
+});
+let unsubOrders, unsubMenu;
+function startLive() {
+  unsubOrders?.();
+  unsubMenu?.();
+  ordersLoaded = false;
+  unsubOrders = onSnapshot(
+    query(collection(db, "orders"), orderBy("createdAt", "desc")),
+    (s) => {
+      const fresh = s
+        .docChanges()
+        .filter((c) => c.type === "added" && c.doc.data().status === "New");
+      orders = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+      render();
+      if (ordersLoaded && fresh.length)
+        fresh.forEach((c) => notifyNewOrder({ id: c.doc.id, ...c.doc.data() }));
+      ordersLoaded = true;
+    },
+  );
+  unsubMenu = onSnapshot(collection(db, "menu"), async (s) => {
+    const liveItems = new Map(s.docs.map((item) => [item.id, item.data()]));
+    const missingItems = starterMenu.filter((item) => !liveItems.has(item.id));
+    const missingImages = starterMenu.filter(
+      (item) =>
+        liveItems.has(item.id) &&
+        !liveItems.get(item.id).image &&
+        Boolean(item.image),
+    );
+
+    if (missingItems.length || missingImages.length) {
+      const batch = writeBatch(db);
+      missingItems.forEach((item) => {
+        batch.set(doc(db, "menu", item.id), item);
+      });
+      missingImages.forEach((item) => {
+        batch.update(doc(db, "menu", item.id), { image: item.image });
+      });
+      await batch.commit();
+      return;
+    }
+
+    const menuOrder = Object.fromEntries(
+      starterMenu.map((item, index) => [item.id, index]),
+    );
+    menu = s.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (menuOrder[a.id] ?? 9999) - (menuOrder[b.id] ?? 9999));
+    render();
+  });
+}
+$("#enableAlerts").onclick = async () => {
+  try {
+    if ("Notification" in window && Notification.permission === "default")
+      await Notification.requestPermission();
+    audioContext =
+      audioContext || new (window.AudioContext || window.webkitAudioContext)();
+    await audioContext.resume();
+    alertsEnabled = true;
+    $("#enableAlerts").textContent = "🔔 Alerts ON";
+    playOrderChime();
+  } catch {
+    $("#enableAlerts").textContent = "Alerts blocked";
+  }
+};
+function playOrderChime() {
+  if (!alertsEnabled || !audioContext) return;
+  [880, 1175, 880].forEach((freq, i) => {
+    const o = audioContext.createOscillator(),
+      g = audioContext.createGain(),
+      start = audioContext.currentTime + i * 0.22;
+    o.frequency.value = freq;
+    o.type = "sine";
+    g.gain.setValueAtTime(0.001, start);
+    g.gain.exponentialRampToValueAtTime(0.28, start + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
+    o.connect(g);
+    g.connect(audioContext.destination);
+    o.start(start);
+    o.stop(start + 0.2);
+  });
+}
+function notifyNewOrder(o) {
+  playOrderChime();
+  document.title = `🔔 Table ${o.table} - New Order`;
+  setTimeout(() => (document.title = "The Huts Owner Panel"), 8000);
+  if ("Notification" in window && Notification.permission === "granted")
+    new Notification("The Huts Cafe - New Order", {
+      body: `Table ${String(o.table).padStart(2, "0")} · ${o.items.reduce((s, i) => s + i.qty, 0)} item(s) · ₹${o.total}`,
+      tag: `order-${o.id}`,
+      renotify: true,
+    });
+}
+document.querySelectorAll("[data-tab]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      tab = b.dataset.tab;
+      document
+        .querySelectorAll("[data-tab]")
+        .forEach((x) => x.classList.toggle("active", x === b));
+      $("#pageTitle").textContent = b.textContent.trim().replace(/^[^ ]+ /, "");
+      render();
+    }),
+);
+function render() {
+  if (tab === "orders") renderOrders();
+  if (tab === "tables") renderTables();
+  if (tab === "menu") renderMenu();
+  if (tab === "qrcodes") renderQRCodes();
+  if (tab === "reports") renderReports();
+}
+function renderOrders() {
+  const active = orders.filter(
+    (o) => !["Completed", "Cancelled"].includes(o.status),
+  );
+  $("#panel").innerHTML =
+    `<div class="stats"><article>Active<strong>${active.length}</strong></article><article>Occupied<strong>${new Set(active.map((o) => o.table)).size}/25</strong></article><article>Sales<strong>₹${orders.filter((o) => o.status === "Completed").reduce((s, o) => s + o.total - (o.discount || 0), 0)}</strong></article></div><div class="order-grid">${active.map((o) => `<article class="order-card"><header><b>TABLE ${String(o.table).padStart(2, "0")}</b><em>${o.status}</em></header><small>${dt(o.createdAt)}</small>${o.items.map((i) => `<div><span>${i.qty}× ${i.name}</span><b>₹${i.qty * i.price}</b></div>`).join("")}${o.note ? `<p>Note: ${o.note}</p>` : ""}<footer><strong>₹${o.total}</strong>${o.status === "New" ? `<button data-status="Preparing" data-id="${o.id}">Accept</button>` : o.status === "Preparing" ? `<button data-status="Ready" data-id="${o.id}">Ready</button>` : `<button data-checkout="${o.id}">Checkout</button>`}<button data-kot="${o.id}">KOT</button></footer></article>`).join("") || "<p>No active orders</p>"}</div>`;
+}
+function renderTables() {
+  const active = orders.filter(
+    (o) => !["Completed", "Cancelled"].includes(o.status),
+  );
+  $("#panel").innerHTML = `<div class="tables">${Array.from(
+    { length: 25 },
+    (_, i) => i + 1,
+  )
+    .map((n) => {
+      const list = active.filter((o) => o.table === n);
+      return `<article class="${list.length ? "busy" : ""}"><small>TABLE</small><strong>${String(n).padStart(2, "0")}</strong><span>${list.length ? `₹${list.reduce((s, o) => s + o.total, 0)}` : "Available"}</span></article>`;
+    })
+    .join("")}</div>`;
+}
+function renderMenu() {
+  $("#panel").innerHTML =
+    `<div class="menu-help"><b>Food image kaise badlein?</b><span>Google Images me photo kholkar “Copy image address” karein, neeche Image URL me paste karke Save dabayein.</span></div><div class="menu-editor">${menu
+      .map(
+        (i) =>
+          `<article>
+            <div class="menu-thumb">${i.image ? `<img src="${escapeHtml(i.image)}" alt="${escapeHtml(i.name)}" referrerpolicy="no-referrer" onerror="this.hidden=true">` : "🍽️"}</div>
+            <div class="menu-name"><small>${escapeHtml(i.category)}</small><b>${escapeHtml(i.name)}</b></div>
+            <input data-price="${i.id}" type="number" min="0" value="${i.price}" aria-label="Price">
+            <input data-image="${i.id}" type="url" value="${escapeHtml(i.image)}" placeholder="https://... image URL" aria-label="Image URL">
+            <label><input data-avail="${i.id}" type="checkbox" ${i.available !== false ? "checked" : ""}> Available</label>
+            <button data-save="${i.id}">Save</button>
+          </article>`,
+      )
+      .join("")}</div>`;
+}
+function renderQRCodes() {
+  const base = `${location.origin}${location.pathname.replace(/owner\.html$/, "")}`;
+  $("#panel").innerHTML =
+    `<section class="qr-section"><div class="qr-toolbar"><div><h2>25 Table QR Codes</h2><p>Har QR apne table ka unique menu kholta hai.</p></div><button data-print-qr>Print / Save PDF</button></div><div class="qr-grid">${Array.from(
+      { length: 25 },
+      (_, i) => i + 1,
+    )
+      .map(
+        (n) =>
+          `<article class="qr-card"><span>THE HUTS CAFE</span><div class="qr-canvas" data-qr="${n}"></div><strong>TABLE ${String(n).padStart(2, "0")}</strong><small>Scan · Order · Enjoy</small><button data-download-qr="${n}">Download QR</button></article>`,
+      )
+      .join("")}</div></section>`;
+  if (!window.QRCode) {
+    $(".qr-grid").innerHTML =
+      "<p>QR library load nahi hui. Internet check karke page refresh karein.</p>";
+    return;
+  }
+  document.querySelectorAll("[data-qr]").forEach(
+    (el) =>
+      new QRCode(el, {
+        text: `${base}?table=${el.dataset.qr}`,
+        width: 180,
+        height: 180,
+        colorDark: "#123328",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H,
+      }),
+  );
+}
+const orderDate = (o) =>
+  o.completedAt?.toDate?.() || o.createdAt?.toDate?.() || new Date(0);
+function inReportRange(o) {
+  const d = orderDate(o),
+    now = new Date(),
+    start = new Date(now);
+  if (reportRange === "daily") start.setHours(0, 0, 0, 0);
+  if (reportRange === "weekly") {
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+  }
+  if (reportRange === "monthly")
+    (start.setFullYear(now.getFullYear(), now.getMonth(), 1),
+      start.setHours(0, 0, 0, 0));
+  return d >= start && d <= now;
+}
+function renderReports() {
+  shownReports = orders.filter(
+    (o) => o.status === "Completed" && inReportRange(o),
+  );
+  const total = shownReports.reduce(
+      (s, o) => s + o.total - (o.discount || 0),
+      0,
+    ),
+    cash = shownReports
+      .filter((o) => o.paymentMode === "Cash")
+      .reduce((s, o) => s + o.total - (o.discount || 0), 0),
+    upi = shownReports
+      .filter((o) => o.paymentMode === "UPI")
+      .reduce((s, o) => s + o.total - (o.discount || 0), 0);
+  const days = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth() + 1,
+      0,
+    ).getDate(),
+    daily = Array.from({ length: days }, () => 0);
+  shownReports.forEach((o) => {
+    const d = orderDate(o);
+    if (
+      d.getMonth() === new Date().getMonth() &&
+      d.getFullYear() === new Date().getFullYear()
+    )
+      daily[d.getDate() - 1] += o.total - (o.discount || 0);
+  });
+  const max = Math.max(1, ...daily);
+  $("#panel").innerHTML =
+    `<div class="report-toolbar"><div class="report-tabs"><button data-report-range="daily" class="${reportRange === "daily" ? "active" : ""}">Daily</button><button data-report-range="weekly" class="${reportRange === "weekly" ? "active" : ""}">Weekly</button><button data-report-range="monthly" class="${reportRange === "monthly" ? "active" : ""}">Monthly</button></div>${shownReports.length ? `<button class="danger" data-delete-shown>Delete shown reports</button>` : ""}</div><div class="stats"><article>Sales<strong>₹${total}</strong></article><article>Cash<strong>₹${cash}</strong></article><article>UPI<strong>₹${upi}</strong></article></div>${reportRange === "monthly" ? `<section class="sales-chart"><h3>Monthly Sales Graph</h3><div class="chart-bars">${daily.map((v, i) => `<div class="chart-day" title="${i + 1}: ₹${v}"><span style="height:${Math.max(v ? 5 : 0, (v / max) * 100)}%"></span><small>${i % 5 === 0 || i === daily.length - 1 ? i + 1 : ""}</small></div>`).join("")}</div></section>` : ""}<div class="report-list">${shownReports.map((o) => `<div class="history-row report-row"><span><b>${o.memoNumber || `HUTS-${o.id.slice(-6).toUpperCase()}`}</b><small>Table ${o.table} · ${dt(o.completedAt || o.createdAt)}</small></span><b>₹${o.total - (o.discount || 0)}</b><div><button data-bill="${o.id}">Bill</button><button class="danger" data-delete-report="${o.id}">Delete</button></div></div>`).join("") || "<p>No completed bills in this period.</p>"}</div>`;
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.reportRange) {
+    reportRange = b.dataset.reportRange;
+    renderReports();
+    return;
+  }
+  if (
+    b.dataset.deleteReport &&
+    confirm("Ye bill/report permanently delete ho jayega. Delete karein?")
+  )
+    await deleteDoc(doc(db, "orders", b.dataset.deleteReport));
+  if (
+    b.hasAttribute("data-delete-shown") &&
+    shownReports.length &&
+    confirm(
+      `${shownReports.length} report(s) permanently delete ho jayengi. Continue?`,
+    )
+  ) {
+    const batch = writeBatch(db);
+    shownReports.forEach((o) => batch.delete(doc(db, "orders", o.id)));
+    await batch.commit();
+  }
+  if (b.dataset.status)
+    await updateDoc(doc(db, "orders", b.dataset.id), {
+      status: b.dataset.status,
+    });
+  if (b.dataset.save) {
+    const id = b.dataset.save;
+    await updateDoc(doc(db, "menu", id), {
+      price: Number(document.querySelector(`[data-price='${id}']`).value),
+      image: document.querySelector(`[data-image='${id}']`).value.trim(),
+      available: document.querySelector(`[data-avail='${id}']`).checked,
+    });
+    b.textContent = "Saved ✓";
+    setTimeout(() => (b.textContent = "Save"), 1200);
+  }
+  if (b.dataset.checkout) {
+    checkout = orders.find((o) => o.id === b.dataset.checkout);
+    $("#checkoutTitle").textContent =
+      `Table ${String(checkout.table).padStart(2, "0")}`;
+    $("#discount").value = 0;
+    updatePayable();
+    $("#checkoutModal").classList.remove("hidden");
+  }
+  if (b.dataset.kot)
+    print(
+      orders.find((o) => o.id === b.dataset.kot),
+      "kot",
+    );
+  if (b.dataset.bill)
+    print(
+      orders.find((o) => o.id === b.dataset.bill),
+      "bill",
+    );
+  if (b.hasAttribute("data-print-qr")) {
+    document.body.classList.add("printing-qr");
+    window.print();
+    setTimeout(() => document.body.classList.remove("printing-qr"), 500);
+  }
+  if (b.dataset.downloadQr) {
+    const n = b.dataset.downloadQr,
+      box = document.querySelector(`[data-qr='${n}']`),
+      canvas = box?.querySelector("canvas"),
+      img = box?.querySelector("img"),
+      a = document.createElement("a");
+    a.download = `the-huts-table-${String(n).padStart(2, "0")}-qr.png`;
+    a.href = canvas ? canvas.toDataURL("image/png") : img?.src || "";
+    if (a.href) a.click();
+  }
+});
+document.querySelectorAll("[data-pay]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      payment = b.dataset.pay;
+      document
+        .querySelectorAll("[data-pay]")
+        .forEach((x) => x.classList.toggle("active", x === b));
+    }),
+);
+$("#discount").oninput = updatePayable;
+function updatePayable() {
+  if (checkout)
+    $("#payable").textContent =
+      `₹${Math.max(0, checkout.total - Number($("#discount").value || 0))}`;
+}
+$("[data-checkout-close]").onclick = () =>
+  $("#checkoutModal").classList.add("hidden");
+$("#completePayment").onclick = async () => {
+  const discount = Math.min(
+      checkout.total,
+      Math.max(0, Number($("#discount").value || 0)),
+    ),
+    now = new Date(),
+    memoNumber = `HUTS-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}-${checkout.id.slice(-3).toUpperCase()}`;
+  await updateDoc(doc(db, "orders", checkout.id), {
+    status: "Completed",
+    discount,
+    paymentMode: payment,
+    memoNumber,
+    completedAt: serverTimestamp(),
+  });
+  checkout = {
+    ...checkout,
+    status: "Completed",
+    discount,
+    paymentMode: payment,
+    memoNumber,
+  };
+  $("#checkoutModal").classList.add("hidden");
+  print(checkout, "bill");
+};
+function print(o, mode) {
+  const memo = o.memoNumber || `HUTS-${o.id.slice(-6).toUpperCase()}`;
+  $("#receipt").innerHTML =
+    `<h1>THE HUTS CAFE</h1><p>${mode === "kot" ? "KITCHEN ORDER TICKET" : "BILL MEMO"}</p>${mode === "bill" ? "<p>Near Murliwala Garden, Agra Road, Jaipur</p>" : ""}<hr><div><span>${mode === "kot" ? `KOT: ${o.id.slice(-6).toUpperCase()}` : `Memo No: ${memo}`}</span><b>Table ${o.table}</b></div><p>${dt(o.completedAt || o.createdAt)}</p><hr>${o.items.map((i) => `<div><span>${i.qty} x ${i.name}</span>${mode === "bill" ? `<b>₹${i.qty * i.price}</b>` : ""}</div>`).join("")}${o.note ? `<p><b>NOTE: ${o.note}</b></p>` : ""}${mode === "bill" ? `<hr><div><span>Subtotal</span><b>₹${o.total}</b></div><div><span>Discount</span><b>-₹${o.discount || 0}</b></div><div><span>${o.paymentMode || ""}</span><b>TOTAL ₹${o.total - (o.discount || 0)}</b></div><p>Thank you! Visit again.</p>` : ""}`;
+  window.print();
+}

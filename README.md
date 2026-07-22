@@ -17,3 +17,12 @@ Customer URL: `https://USERNAME.github.io/REPOSITORY/?table=1`
 Tables 1–25 ke liye URL me table number badlein. Owner panel: `owner.html`
 
 Important: Firebase web config secret password nahi hota. Security Firestore Rules aur Firebase Authentication se hoti hai.
+
+## Menu editing
+
+- Starter menu me 72 food aur drink items hain.
+- Owner panel me **Menu** kholkar price, availability aur image URL edit kar sakte hain.
+- Google Images me full photo kholkar **Copy image address** karein, phir Image URL field me paste karein.
+- Existing Firestore prices overwrite nahi hote. Owner login par sirf missing starter items aur missing images add hote hain.
+
+HTML, CSS aur JavaScript files normal indentation ke saath formatted hain, isliye code dhoondhna aur edit karna easy hai.
