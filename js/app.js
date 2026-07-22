@@ -140,7 +140,10 @@ function openCart() {
     .join("");
   const total = rows.reduce((s, i) => s + cart[i.id] * i.price, 0);
   $("#cartTotal").textContent = `₹${total}`;
+  $("#placeOrder").disabled = false;
   $("#placeOrder").textContent = `Place order · ₹${total}`;
+  $("#orderMessage").textContent = "";
+  orderSending = false;
   $("#cartModal").classList.remove("hidden");
 }
 let orderSending = false;
@@ -188,6 +191,9 @@ $("#placeOrder").onclick = async () => {
     $("#orderNote").value = "";
     $("#orderMessage").textContent = "";
     $("#cartModal").classList.add("hidden");
+    orderBtn.disabled = false;
+    orderBtn.textContent = "Place order";
+    orderSending = false;
     $("#successTable").textContent = `TABLE ${String(table).padStart(2, "0")}`;
     $("#successOrder").textContent =
       `Order #${placed.id.slice(-6).toUpperCase()}`;
@@ -204,6 +210,7 @@ $("#placeOrder").onclick = async () => {
 };
 $("#doneOrder").onclick = () => {
   $("#successModal").classList.add("hidden");
+  $("#placeOrder").disabled = false;
   orderSending = false;
 };
 

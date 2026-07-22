@@ -1,4 +1,4 @@
-const CACHE = "the-huts-owner-v5";
+const CACHE = "the-huts-owner-v6";
 const SHELL = [
   "./owner.html",
   "./css/style.css",
