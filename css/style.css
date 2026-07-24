@@ -283,6 +283,47 @@ textarea {
 .dashboard aside #logoutBtn {
   margin-top: auto;
 }
+.aside-brand {
+  padding: 10px 12px;
+  color: #89a99b;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.aside-brand b {
+  color: #fff;
+  letter-spacing: 1px;
+}
+.managed-copy {
+  margin-top: 18px;
+  color: #788a81;
+  font-size: 11px;
+}
+.access-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  background: #fff6df;
+  border: 1px solid #eed18a;
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.access-note span {
+  color: #66552f;
+}
+.read-only-badge {
+  background: #eef3f0;
+  color: var(--green);
+  border-radius: 99px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.panel-message {
+  background: #fff;
+  padding: 18px;
+  border-radius: 12px;
+}
 .dash-main {
   padding: 25px;
 }
@@ -410,6 +451,29 @@ textarea {
   margin: 8px 0;
   border-radius: 10px;
 }
+.vasuki-branding {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  max-width: 1120px;
+  margin: 12px auto 90px;
+  padding: 16px;
+  color: #5f6f67;
+  font-size: 12px;
+  text-align: center;
+}
+.vasuki-branding a {
+  color: var(--green);
+  font-weight: bold;
+  text-decoration: none;
+}
+.vasuki-branding a:last-child {
+  border: 1px solid #cbd9d1;
+  border-radius: 99px;
+  padding: 7px 11px;
+}
 .history-row small {
   display: block;
 }
@@ -460,7 +524,8 @@ textarea {
     padding: 5px;
   }
   .dashboard aside h2,
-  .dashboard aside #logoutBtn {
+  .dashboard aside #logoutBtn,
+  .dashboard aside .aside-brand {
     display: none;
   }
   .dashboard aside button {

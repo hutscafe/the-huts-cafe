@@ -1,7 +1,7 @@
 {
-  "name": "The Huts Cafe Owner Panel",
+  "name": "The Huts Cafe Order Operations",
   "short_name": "Huts Orders",
-  "description": "The Huts Cafe order, table and billing panel",
+  "description": "Restricted order, table, billing and reports app",
   "id": "./owner.html",
   "start_url": "./owner.html",
   "scope": "./",

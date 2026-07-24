@@ -14,7 +14,7 @@ let db = null,
   cart = {},
   category = "All";
 const table = Math.min(
-    25,
+    10,
     Math.max(1, Number(new URLSearchParams(location.search).get("table")) || 1),
   ),
   repeatKey = `theHutsLastOrderTable${table}`;

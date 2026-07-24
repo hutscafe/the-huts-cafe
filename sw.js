@@ -1,10 +1,9 @@
-const CACHE = "the-huts-owner-v6";
+const CACHE = "the-huts-operations-v7";
 const SHELL = [
   "./owner.html",
   "./css/style.css",
   "./js/owner.js",
   "./js/firebase-config.js",
-  "./js/menu-data.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

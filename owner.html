@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#123328" />
-    <title>The Huts Owner Panel</title>
+    <title>The Huts Order Operations</title>
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icons/icon-192.png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
@@ -15,8 +15,8 @@
       <section class="login-card">
         <div class="logo">H</div>
         <small>THE HUTS CAFE</small>
-        <h1>Order Panel</h1>
-        <p>Secure owner access</p>
+        <h1>Order Operations</h1>
+        <p>Restricted cafe access</p>
         <input id="ownerEmail" type="email" placeholder="Owner email" /><input
           id="ownerPassword"
           type="password"
@@ -24,6 +24,7 @@
         /><button id="loginBtn" class="primary">Sign in</button>
         <p id="loginError"></p>
         <a href="index.html">← Customer menu</a>
+        <p class="managed-copy">Managed server by Vasuki NFC</p>
       </section>
     </main>
     <main id="dashboard" class="dashboard hidden">
@@ -31,10 +32,9 @@
         <h2>H <span>The Huts</span></h2>
         <button data-tab="orders" class="active">▦ Orders</button
         ><button data-tab="tables">⌑ Tables</button
-        ><button data-tab="menu">☷ Menu</button
-        ><button data-tab="qrcodes">▣ QR Codes</button
         ><button data-tab="reports">↗ Reports</button
         ><button id="logoutBtn">↪ Logout</button>
+        <div class="aside-brand">Managed by<br /><b>VASUKI NFC</b></div>
       </aside>
       <section class="dash-main">
         <header>
@@ -45,7 +45,7 @@
           <div class="owner-actions">
             <button id="installApp">⬇ Install App</button
             ><button id="enableAlerts">🔔 Enable alerts</button
-            ><b class="online">● Owner</b>
+            ><b class="online">● Operations</b>
           </div>
         </header>
         <div id="panel"></div>
@@ -72,10 +72,6 @@
       </section>
     </div>
     <section id="receipt" class="receipt"></section>
-    <script
-      defer
-      src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
-    ></script>
     <script type="module" src="js/owner.js"></script>
   </body>
 </html>
