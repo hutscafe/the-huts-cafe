@@ -7,7 +7,7 @@ service cloud.firestore {
 
     function vasukiAdmin() {
       return request.auth != null
-             && request.auth.token.email == 'REPLACE_WITH_YOUR_ADMIN_EMAIL';
+             && request.auth.token.email == 'vasukinfc@gmail.com';
     }
 
     match /menu/{item} {
