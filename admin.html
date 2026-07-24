@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#123328" />
+    <title>Vasuki Menu Admin</title>
+    <link rel="icon" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="admin-body">
+    <main id="adminLogin" class="login-wrap">
+      <section class="login-card">
+        <div class="logo">V</div>
+        <small>VASUKI NFC</small>
+        <h1>Menu Admin</h1>
+        <p>Only authorised Vasuki administrator</p>
+        <input id="adminEmail" type="email" placeholder="Admin email" />
+        <input id="adminPassword" type="password" placeholder="Password" />
+        <button id="adminLoginBtn" class="primary">Secure sign in</button>
+        <p id="adminLoginError"></p>
+        <a href="index.html">← Customer menu</a>
+      </section>
+    </main>
+
+    <main id="adminDashboard" class="admin-shell hidden">
+      <header class="admin-topbar">
+        <div>
+          <small>VASUKI NFC · SECURE CONTROL</small>
+          <h1>The Huts Cafe Menu Admin</h1>
+        </div>
+        <button id="adminLogout">Logout</button>
+      </header>
+
+      <nav class="admin-tabs">
+        <button class="active" data-admin-tab="menu">Food & Prices</button>
+        <button data-admin-tab="branding">Images & Branding</button>
+      </nav>
+
+      <section id="menuAdminPanel">
+        <div class="admin-toolbar">
+          <input
+            id="adminSearch"
+            class="admin-search"
+            placeholder="Search food or category…"
+          />
+          <div class="admin-actions">
+            <button id="addFood" class="primary">+ Add food</button>
+            <button id="seedMenu">Load starter menu</button>
+          </div>
+        </div>
+        <p id="menuAdminStatus" class="admin-status"></p>
+        <div id="adminMenuList" class="admin-menu-list"></div>
+      </section>
+
+      <section id="brandingAdminPanel" class="admin-card hidden">
+        <h2>Hero, Logo & Payment QR</h2>
+        <p>
+          Direct image address paste karein, preview check karein, then save.
+        </p>
+        <div class="admin-form-grid">
+          <label>
+            Hero background image URL
+            <input id="heroImageUrl" type="url" placeholder="https://..." />
+            <img id="heroPreview" class="admin-preview" alt="Hero preview" />
+          </label>
+          <label>
+            Cafe logo image URL
+            <input id="logoImageUrl" type="url" placeholder="https://..." />
+            <img id="logoPreview" class="admin-preview" alt="Logo preview" />
+          </label>
+          <label>
+            Bank/UPI QR image URL
+            <input id="paymentQrUrl" type="url" placeholder="https://..." />
+            <img id="qrPreview" class="admin-preview" alt="QR preview" />
+          </label>
+        </div>
+        <p id="brandingStatus" class="admin-status"></p>
+        <button id="saveBranding" class="primary">Save branding images</button>
+      </section>
+    </main>
+
+    <script type="module" src="js/admin.js"></script>
+  </body>
+</html>

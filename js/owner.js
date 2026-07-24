@@ -33,6 +33,11 @@ let audioContext = null;
 let alertsEnabled = false;
 let reportRange = "daily";
 let unsubscribeOrders = null;
+let publicSettings = {};
+
+onSnapshot(doc(db, "settings", "public"), (snapshot) => {
+  publicSettings = snapshot.data() || {};
+});
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -585,7 +590,7 @@ async function printReceipt(order, mode) {
     .join("");
 
   $("#receipt").innerHTML = `
-    <img class="receipt-logo" src="assets/cafe-logo.png" alt="The Huts Cafe logo">
+    <img class="receipt-logo" src="${escapeHtml(publicSettings.logoImage || "assets/cafe-logo.png")}" alt="The Huts Cafe logo">
     <h1>THE HUTS CAFE</h1>
     <p>${mode === "kot" ? "KITCHEN ORDER TICKET" : "BILL MEMO"}</p>
     ${mode === "bill" ? "<p>Near Murliwala Garden, Agra Road, Jaipur</p>" : ""}
@@ -610,8 +615,8 @@ async function printReceipt(order, mode) {
           </div>
           <section class="receipt-payment">
             <p><b>Scan to Pay ₹${order.total - (order.discount || 0)}</b></p>
-            <img src="assets/payment-qr.png" alt="Demo UPI payment QR">
-            <small>DEMO QR — REPLACE BEFORE LIVE</small>
+            <img src="${escapeHtml(publicSettings.paymentQr || "assets/payment-qr.png")}" alt="UPI payment QR">
+            ${publicSettings.paymentQr ? "" : "<small>DEMO QR — REPLACE BEFORE LIVE</small>"}
           </section>
           <p>Thank you! Visit again.</p>
           <p class="receipt-brand">Smart Menu Technology by Vasuki NFC</p>

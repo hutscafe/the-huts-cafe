@@ -27,10 +27,161 @@ textarea {
   min-height: 390px;
   background:
     linear-gradient(90deg, #09271fe8 0%, #123328c9 48%, #12332870 100%),
-    url("../assets/cafe-hero.png") center / cover no-repeat;
+    var(--hero-image, url("../assets/cafe-hero.png")) center / cover no-repeat;
   color: #fff;
   padding: 40px max(20px, calc((100% - 1120px) / 2));
   border-radius: 0 0 32px 32px;
+}
+
+/* -------------------- VASUKI ADMIN PANEL -------------------- */
+.admin-body {
+  min-height: 100vh;
+  background: #eef2ef;
+}
+.admin-shell {
+  max-width: 1240px;
+  margin: auto;
+  padding: 24px;
+}
+.admin-topbar,
+.admin-toolbar,
+.admin-card,
+.admin-item {
+  background: #fff;
+  border: 1px solid #dfe7e2;
+  border-radius: 18px;
+}
+.admin-topbar,
+.admin-toolbar {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.admin-topbar h1,
+.admin-card h2 {
+  margin: 0;
+}
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.admin-tabs button {
+  padding: 11px 18px;
+  border: 1px solid #cad7cf;
+  border-radius: 99px;
+  background: #fff;
+}
+.admin-tabs button.active {
+  background: var(--dark);
+  color: #fff;
+}
+.admin-card {
+  padding: 20px;
+}
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.admin-form-grid label,
+.admin-edit-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.admin-form-grid input,
+.admin-edit-grid input,
+.admin-edit-grid select,
+.admin-search {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #ccd8d0;
+  border-radius: 10px;
+}
+.admin-preview {
+  width: 100%;
+  height: 180px;
+  margin-top: 8px;
+  object-fit: contain;
+  background: #edf2ee;
+  border-radius: 12px;
+}
+.admin-menu-list {
+  display: grid;
+  gap: 12px;
+}
+.admin-item {
+  padding: 14px;
+}
+.admin-item-head {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.admin-item-head img {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #e6eee8;
+}
+.admin-item-head h3,
+.admin-item-head p {
+  margin: 3px 0;
+}
+.admin-edit-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 120px 1.8fr 110px;
+  gap: 10px;
+  align-items: end;
+  margin-top: 14px;
+}
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-actions button,
+.admin-toolbar button,
+.admin-topbar button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+}
+.admin-status {
+  min-height: 22px;
+  color: #17623f;
+  font-weight: 700;
+}
+.danger {
+  background: #ffe7e4;
+  color: #9d2419;
+}
+@media (max-width: 760px) {
+  .admin-shell {
+    padding: 12px;
+  }
+  .admin-topbar,
+  .admin-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .admin-form-grid,
+  .admin-edit-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-item-head {
+    grid-template-columns: 56px 1fr;
+  }
+  .admin-item-head .admin-actions {
+    grid-column: 1/-1;
+  }
 }
 .hero-copy {
   max-width: 1120px;
@@ -52,6 +203,12 @@ textarea {
   place-items: center;
   font: 28px Georgia;
   color: #efb46e;
+}
+.brand > b img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 .brand small {
   letter-spacing: 2px;

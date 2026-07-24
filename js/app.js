@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/fireba
 import {
   getFirestore,
   collection,
+  doc,
   onSnapshot,
   addDoc,
   serverTimestamp,
@@ -226,6 +227,24 @@ if (firebaseReady) {
   try {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
+    onSnapshot(doc(db, "settings", "public"), (snapshot) => {
+      const settings = snapshot.data() || {};
+      const heroImage = settings.heroImage?.trim();
+      if (!heroImage) {
+        document.documentElement.style.removeProperty("--hero-image");
+      } else {
+        const safeHeroImage = heroImage.replace(/["\\\n\r]/g, "");
+        document.documentElement.style.setProperty(
+          "--hero-image",
+          `url("${safeHeroImage}")`,
+        );
+      }
+
+      const logoImage = settings.logoImage?.trim();
+      $("#brandMark").innerHTML = logoImage
+        ? `<img src="${escapeHtml(logoImage)}" alt="The Huts Cafe logo">`
+        : "H";
+    });
     onSnapshot(
       collection(db, "menu"),
       (snap) => {

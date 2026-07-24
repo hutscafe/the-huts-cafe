@@ -1,8 +1,11 @@
-const CACHE = "the-huts-operations-v8";
+const CACHE = "the-huts-operations-v9";
 const SHELL = [
   "./owner.html",
+  "./admin.html",
   "./css/style.css",
   "./js/owner.js",
+  "./js/admin.js",
+  "./js/menu-data.js",
   "./js/firebase-config.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",

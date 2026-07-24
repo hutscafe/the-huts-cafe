@@ -17,6 +17,8 @@ Customer URL: `https://USERNAME.github.io/REPOSITORY/?table=1`
 
 Tables 1–10 ke liye URL me table number badlein. Restricted Order Operations App: `owner.html`
 
+Vasuki secure menu admin: `admin.html`
+
 Important: Firebase web config secret password nahi hota. Security Firestore Rules aur Firebase Authentication se hoti hai.
 
 ## Managed menu and restricted access
@@ -48,3 +50,14 @@ HTML, CSS aur JavaScript files normal indentation ke saath formatted hain, isliy
 - Bill ka bank/UPI payment QR: `assets/payment-qr.png`
 - Nayi files ka naam aur extension bilkul same rakhein, tab code edit nahi karna padega.
 - `payment-qr.png` abhi sirf demo placeholder hai. Live use se pehle cafe ka asli bank/UPI QR lagana mandatory hai.
+
+## Vasuki Admin Panel — one-time setup
+
+1. Firebase Authentication > Users me apne Vasuki admin email/password ka alag user banayein. Cafe owner wala account use na karein.
+2. `firestore.rules` me `REPLACE_WITH_YOUR_ADMIN_EMAIL` ko apne exact Vasuki admin email se replace karein.
+3. Updated Rules ko Firebase Firestore > Rules me paste karke Publish karein.
+4. GitHub par updated files upload karke `https://hutscafe.github.io/the-huts-cafe/admin.html` open karein.
+5. First login ke baad **Load starter menu** ek baar click karein. Iske baad food name, category, price, image, live/hidden status aur new items panel se manage honge.
+6. **Images & Branding** tab se hero background, cafe logo aur bank/UPI QR ke direct image URLs save karein.
+
+Cafe owner ka operations account `admin.html` access nahi kar sakta. Owner ke `owner.html` me menu/branding editing option nahi diya gaya hai.

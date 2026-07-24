@@ -5,9 +5,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function vasukiAdmin() {
+      return request.auth != null
+             && request.auth.token.email == 'REPLACE_WITH_YOUR_ADMIN_EMAIL';
+    }
+
     match /menu/{item} {
       allow read: if true;
-      allow write: if false;
+      allow write: if vasukiAdmin();
+    }
+
+    match /settings/{document} {
+      allow read: if true;
+      allow write: if vasukiAdmin();
+    }
+
+    match /admin/{document} {
+      allow read, write: if vasukiAdmin();
     }
 
     match /orders/{order} {
