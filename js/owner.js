@@ -568,7 +568,7 @@ $("#completePayment").onclick = async () => {
   printReceipt(checkoutOrder, "bill");
 };
 
-function printReceipt(order, mode) {
+async function printReceipt(order, mode) {
   if (!order) return;
 
   const memoNumber =
@@ -585,6 +585,7 @@ function printReceipt(order, mode) {
     .join("");
 
   $("#receipt").innerHTML = `
+    <img class="receipt-logo" src="assets/cafe-logo.png" alt="The Huts Cafe logo">
     <h1>THE HUTS CAFE</h1>
     <p>${mode === "kot" ? "KITCHEN ORDER TICKET" : "BILL MEMO"}</p>
     ${mode === "bill" ? "<p>Near Murliwala Garden, Agra Road, Jaipur</p>" : ""}
@@ -607,6 +608,11 @@ function printReceipt(order, mode) {
             <span>${order.paymentMode || ""}</span>
             <b>TOTAL ₹${order.total - (order.discount || 0)}</b>
           </div>
+          <section class="receipt-payment">
+            <p><b>Scan to Pay ₹${order.total - (order.discount || 0)}</b></p>
+            <img src="assets/payment-qr.png" alt="Demo UPI payment QR">
+            <small>DEMO QR — REPLACE BEFORE LIVE</small>
+          </section>
           <p>Thank you! Visit again.</p>
           <p class="receipt-brand">Smart Menu Technology by Vasuki NFC</p>
         `
@@ -614,5 +620,11 @@ function printReceipt(order, mode) {
     }
   `;
 
+  const receiptImages = [...$("#receipt").querySelectorAll("img")];
+  await Promise.all(
+    receiptImages.map((image) =>
+      image.complete ? Promise.resolve() : image.decode().catch(() => {}),
+    ),
+  );
   window.print();
 }

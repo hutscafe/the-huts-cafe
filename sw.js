@@ -1,4 +1,4 @@
-const CACHE = "the-huts-operations-v7";
+const CACHE = "the-huts-operations-v8";
 const SHELL = [
   "./owner.html",
   "./css/style.css",
@@ -7,6 +7,9 @@ const SHELL = [
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./assets/cafe-logo.png",
+  "./assets/cafe-hero.png",
+  "./assets/payment-qr.png",
 ];
 self.addEventListener("install", (event) =>
   event.waitUntil(

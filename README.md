@@ -40,3 +40,11 @@ Important: Firebase web config secret password nahi hota. Security Firestore Rul
 5. Owner app me Orders, Tables, Billing/KOT aur Reports verify karein.
 
 HTML, CSS aur JavaScript files normal indentation ke saath formatted hain, isliye code dhoondhna aur edit karna easy hai.
+
+## Demo images ko real images se replace karein
+
+- Customer menu ki hero photo: `assets/cafe-hero.png`
+- KOT aur bill ka cafe logo: `assets/cafe-logo.png`
+- Bill ka bank/UPI payment QR: `assets/payment-qr.png`
+- Nayi files ka naam aur extension bilkul same rakhein, tab code edit nahi karna padega.
+- `payment-qr.png` abhi sirf demo placeholder hai. Live use se pehle cafe ka asli bank/UPI QR lagana mandatory hai.
